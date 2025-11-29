@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { db } = await connectToDatabase();
-    const accountsCollection = db.collection('sales_nav_accounts');
+    const accountsCollection = db.collection('linkedin_accounts');
 
     // Find the account
     const account = await accountsCollection.findOne({
