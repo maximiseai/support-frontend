@@ -805,13 +805,12 @@ export default function SalesNavAccountsPage() {
                 <h3 className="text-sm font-medium text-neutral-900 mb-3">Credentials</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
-                    label={modalMode === 'edit' ? 'New Password (leave blank to keep)' : 'Password'}
+                    label={modalMode === 'edit' ? 'New Password (leave blank to keep)' : 'Password (optional)'}
                     field="password"
                     type="password"
                     value={formData.password}
                     onChange={(v) => updateField('password', v)}
-                    placeholder={modalMode === 'edit' ? '••••••••' : 'LinkedIn password'}
-                    required={modalMode === 'create'}
+                    placeholder="LinkedIn password"
                   />
                   <FormField
                     label="2FA Secret Token"

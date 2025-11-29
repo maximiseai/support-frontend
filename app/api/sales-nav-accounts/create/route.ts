@@ -57,14 +57,15 @@ export async function POST(request: NextRequest) {
       .toArray();
     const nextIndex = lastAccount.length > 0 ? lastAccount[0].account_index + 1 : 0;
 
-    // Encrypt password if provided
+    // Encrypt password if provided (password is optional)
     let encrypted_password = '';
     if (password && password.trim()) {
       try {
         encrypted_password = encryptPassword(password);
       } catch (err) {
+        console.error('Password encryption error:', err);
         return NextResponse.json(
-          { error: 'Failed to encrypt password. Check ACCOUNTS_ENCRYPTION_KEY.' },
+          { error: 'Failed to encrypt password. Check ACCOUNTS_ENCRYPTION_KEY environment variable.' },
           { status: 500 }
         );
       }

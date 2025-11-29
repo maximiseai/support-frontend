@@ -9,7 +9,7 @@ import User from '@/lib/models/user.model';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { teamId, amount, note, actionType = 'credit_addition' } = body;
+    const { teamId, amount, note, actionType = 'credit_addition', paymentStatus = 'not_applicable', paymentDate } = body;
 
     if (!teamId || !amount) {
       return NextResponse.json(
@@ -143,6 +143,8 @@ export async function POST(request: NextRequest) {
         previous_balance: currentAvailable,
         new_balance: newAvailable,
         reason: note || `Credits ${actionType === 'refund' ? 'refunded (credits_used decreased)' : 'added (base_credit increased)'} by support`,
+        payment_status: actionType === 'credit_addition' ? paymentStatus : 'not_applicable',
+        payment_date: paymentStatus === 'received' && paymentDate ? new Date(paymentDate) : null,
         created_at: new Date(),
       });
     } catch (logError) {

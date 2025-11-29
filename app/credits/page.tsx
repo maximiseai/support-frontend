@@ -19,6 +19,8 @@ export default function CreditsPage() {
   const [creditAmount, setCreditAmount] = useState('');
   const [note, setNote] = useState('');
   const [actionType, setActionType] = useState<'refund' | 'credit_addition'>('credit_addition');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'received' | 'not_applicable'>('not_applicable');
+  const [paymentDate, setPaymentDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +89,8 @@ export default function CreditsPage() {
         amount,
         note: note.trim() || undefined,
         actionType,
+        paymentStatus: actionType === 'credit_addition' ? paymentStatus : 'not_applicable',
+        paymentDate: paymentStatus === 'received' ? paymentDate : undefined,
       });
 
       setSuccess(response.data.message);
@@ -102,6 +106,8 @@ export default function CreditsPage() {
       // Clear form
       setCreditAmount('');
       setNote('');
+      setPaymentStatus('not_applicable');
+      setPaymentDate('');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to add credits');
     } finally {
@@ -348,6 +354,94 @@ export default function CreditsPage() {
                 }}
               />
             </div>
+
+            {/* Payment Status - Only show for credit additions */}
+            {actionType === 'credit_addition' && (
+              <div
+                className="p-4"
+                style={{
+                  backgroundColor: '#faf8f5',
+                  border: '1px solid #e5dfd8',
+                  borderRadius: '4px',
+                }}
+              >
+                <label className="block text-sm font-medium mb-3" style={{ color: '#3e3832' }}>
+                  Payment Status
+                </label>
+                <div className="space-y-3">
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentStatus"
+                        value="not_applicable"
+                        checked={paymentStatus === 'not_applicable'}
+                        onChange={(e) => setPaymentStatus(e.target.value as any)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm" style={{ color: '#3e3832' }}>
+                        Not Applicable
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentStatus"
+                        value="pending"
+                        checked={paymentStatus === 'pending'}
+                        onChange={(e) => setPaymentStatus(e.target.value as any)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm" style={{ color: '#dc7a00' }}>
+                        Payment Pending
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="paymentStatus"
+                        value="received"
+                        checked={paymentStatus === 'received'}
+                        onChange={(e) => setPaymentStatus(e.target.value as any)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm" style={{ color: '#16a34a' }}>
+                        Payment Received
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Payment Date - Only show when payment is received */}
+                  {paymentStatus === 'received' && (
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={{ color: '#a8998a' }}>
+                        Payment Date
+                      </label>
+                      <input
+                        type="date"
+                        value={paymentDate}
+                        onChange={(e) => setPaymentDate(e.target.value)}
+                        className="px-3 py-2 text-sm"
+                        style={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e5dfd8',
+                          borderRadius: '4px',
+                          color: '#3e3832',
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <p className="text-xs" style={{ color: '#a8998a' }}>
+                    {paymentStatus === 'pending'
+                      ? 'Credits will be added but payment is still expected.'
+                      : paymentStatus === 'received'
+                      ? 'Payment has been received for these credits.'
+                      : 'Select if this credit addition requires payment tracking.'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Action Button */}
             <button

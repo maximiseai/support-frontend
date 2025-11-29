@@ -11,6 +11,8 @@ export interface ICreditLog extends Document {
   new_balance: number;
   reason?: string;
   metadata?: Record<string, any>;
+  payment_status: 'pending' | 'received' | 'not_applicable';
+  payment_date?: Date;
   created_at: Date;
 }
 
@@ -61,6 +63,16 @@ const CreditLogSchema = new Schema<ICreditLog>({
   metadata: {
     type: Schema.Types.Mixed,
     default: {},
+  },
+  payment_status: {
+    type: String,
+    enum: ['pending', 'received', 'not_applicable'],
+    default: 'not_applicable',
+    index: true,
+  },
+  payment_date: {
+    type: Date,
+    default: null,
   },
   created_at: {
     type: Date,
