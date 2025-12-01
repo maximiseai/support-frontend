@@ -1,118 +1,168 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectMongoose } from '@/lib/mongodb';
-import TeamLog from '@/lib/models/teamlog.model';
-import Team from '@/lib/models/team.model';
+import { connectToDatabase } from '@/lib/mongodb';
 
 export async function GET(request: NextRequest) {
   try {
-    await connectMongoose();
+    const { db } = await connectToDatabase();
 
     const searchParams = request.nextUrl.searchParams;
-    const teamId = searchParams.get('teamId');
+    const teamId = searchParams.get('teamId') || '';
+    const teamName = searchParams.get('teamName') || '';
+    const endpoint = searchParams.get('endpoint') || '';
+    const status = searchParams.get('status') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    if (!teamId) {
-      return NextResponse.json(
-        { error: 'Team ID is required' },
-        { status: 400 }
-      );
+    // Build filter for team_logs
+    const filter: Record<string, any> = {};
+
+    // If specific team is requested
+    let team = null;
+    if (teamId) {
+      // First find the team
+      const teamsCollection = db.collection('teams');
+      team = await teamsCollection.findOne({
+        $or: [
+          { uid: teamId },
+          { name: { $regex: teamId, $options: 'i' } },
+        ],
+      });
+
+      if (team) {
+        filter.team_uid = { $in: [team.uid, String(team._id)] };
+      } else {
+        // Try direct match on team_uid
+        filter.team_uid = teamId;
+      }
     }
 
-    // Fetch the team to get current balance
-    const team = await Team.findOne({
-      $or: [{ _id: teamId }, { uid: teamId }],
-    });
-
-    if (!team) {
-      return NextResponse.json(
-        { error: 'Team not found' },
-        { status: 404 }
-      );
+    if (endpoint) {
+      filter.endpoint = { $regex: endpoint, $options: 'i' };
     }
+
+    if (status) {
+      filter.status_code = parseInt(status);
+    }
+
+    const teamLogsCollection = db.collection('team_logs');
+    const teamsCollection = db.collection('teams');
 
     // Get total count
-    const totalCount = await TeamLog.countDocuments({
-      team_uid: { $in: [team.uid, String(team._id)] },
-    });
+    const totalCount = await teamLogsCollection.countDocuments(filter);
 
-    // Fetch logs sorted by creation date (newest first)
-    const logs = await TeamLog.find({
-      team_uid: { $in: [team.uid, String(team._id)] },
-    })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
-
-    // Calculate before/after balance for each log
-    // We'll work forward from oldest to newest for accurate calculation
-    // But since we're showing newest first, we need to reverse calculate
-
-    // Get current balance (base_credit - credits_used = available credits)
-    let currentBalance = (team.base_credit || 0) - (team.credits_used || 0);
-
-    // For the first page, calculate from current balance backwards
-    // For subsequent pages, we need to get the cumulative credits_used from newer logs
-    let cumulativeCreditsFromNewerLogs = 0;
-    if (page > 1) {
-      // Get sum of credits_used from all logs newer than current page
-      const newerLogsSum = await TeamLog.aggregate([
-        {
-          $match: {
-            team_uid: { $in: [team.uid, String(team._id)] },
-          },
-        },
+    // Fetch logs with aggregation to join with teams
+    const logs = await teamLogsCollection
+      .aggregate([
+        { $match: filter },
         { $sort: { createdAt: -1 } },
-        { $limit: (page - 1) * limit },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+        // Join with teams collection
         {
-          $group: {
-            _id: null,
-            total: { $sum: '$credits_used' },
+          $lookup: {
+            from: 'teams',
+            let: { teamUid: '$team_uid' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      { $eq: ['$uid', '$$teamUid'] },
+                      { $eq: [{ $toString: '$_id' }, '$$teamUid'] },
+                    ],
+                  },
+                },
+              },
+              { $project: { name: 1, uid: 1 } },
+            ],
+            as: 'teamInfo',
           },
         },
-      ]);
+        {
+          $addFields: {
+            team_name: { $arrayElemAt: ['$teamInfo.name', 0] },
+          },
+        },
+        { $project: { teamInfo: 0 } },
+      ])
+      .toArray();
 
-      cumulativeCreditsFromNewerLogs = newerLogsSum[0]?.total || 0;
+    // If team was found, calculate balances
+    let logsWithBalance = logs;
+    if (team) {
+      let currentBalance = (team.base_credit || 0) - (team.credits_used || 0);
+
+      let cumulativeCreditsFromNewerLogs = 0;
+      if (page > 1) {
+        const newerLogsSum = await teamLogsCollection
+          .aggregate([
+            { $match: { team_uid: { $in: [team.uid, String(team._id)] } } },
+            { $sort: { createdAt: -1 } },
+            { $limit: (page - 1) * limit },
+            { $group: { _id: null, total: { $sum: '$credits_used' } } },
+          ])
+          .toArray();
+
+        cumulativeCreditsFromNewerLogs = newerLogsSum[0]?.total || 0;
+      }
+
+      let afterBalance = currentBalance + cumulativeCreditsFromNewerLogs;
+
+      logsWithBalance = logs.map((log) => {
+        const beforeBalance = afterBalance + (log.credits_used || 0);
+        const logWithBalance = {
+          ...log,
+          before_balance: beforeBalance,
+          after_balance: afterBalance,
+        };
+        afterBalance = beforeBalance;
+        return logWithBalance;
+      });
     }
 
-    // Calculate balance for each log
-    // Starting balance for this page = current balance + credits from all newer logs
-    let afterBalance = currentBalance + cumulativeCreditsFromNewerLogs;
-
-    const logsWithBalance = logs.map((log) => {
-      const beforeBalance = afterBalance + log.credits_used;
-      const logWithBalance = {
-        ...log,
-        before_balance: beforeBalance,
-        after_balance: afterBalance,
-      };
-      // Move to next log (going backwards in time)
-      afterBalance = beforeBalance;
-      return logWithBalance;
-    });
+    // Map logs to response format
+    const formattedLogs = logsWithBalance.map((log) => ({
+      _id: log._id?.toString(),
+      uid: log.uid,
+      team_uid: log.team_uid,
+      team_name: log.team_name || 'Unknown Team',
+      endpoint: log.endpoint,
+      method: log.method || 'GET',
+      status_code: log.status_code || 200,
+      credits_used: log.credits_used || 0,
+      before_balance: log.before_balance,
+      after_balance: log.after_balance,
+      latency: log.latency || '0',
+      ip: log.ip || '',
+      request_id: log.request_id,
+      createdAt: log.createdAt,
+      updatedAt: log.updatedAt,
+    }));
 
     return NextResponse.json({
-      logs: logsWithBalance,
+      success: true,
+      logs: formattedLogs,
       pagination: {
         page,
         limit,
         totalCount,
         totalPages: Math.ceil(totalCount / limit),
       },
-      team: {
-        _id: team._id,
-        uid: team.uid,
-        name: team.name,
-        base_credit: team.base_credit,
-        credits_used: team.credits_used,
-        current_credits: (team.base_credit || 0) - (team.credits_used || 0),
-      },
+      team: team
+        ? {
+            _id: team._id,
+            uid: team.uid,
+            name: team.name,
+            base_credit: team.base_credit,
+            credits_used: team.credits_used,
+            current_credits: (team.base_credit || 0) - (team.credits_used || 0),
+          }
+        : null,
     });
   } catch (error) {
     console.error('Error fetching team logs:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch team logs' },
+      { error: 'Failed to fetch team logs', details: (error as Error).message },
       { status: 500 }
     );
   }

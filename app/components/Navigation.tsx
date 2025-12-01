@@ -61,6 +61,7 @@ export function Navigation() {
     { href: '/users', label: 'Users' },
     { href: '/apis', label: 'APIs' },
     { href: '/sales-nav-accounts', label: 'Sales Nav' },
+    { href: '/requests', label: 'Requests' },
     { href: '/api-logs', label: 'API Logs' },
   ];
 
