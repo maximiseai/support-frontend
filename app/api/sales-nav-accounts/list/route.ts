@@ -31,8 +31,19 @@ export async function GET(request: NextRequest) {
           permanently_disabled: account.permanently_disabled || false,
           updated_at: account.updated_at,
           linkedin_profile_url: account.linkedin_profile_url,
-          // Additional fields from unified schema
+          // Credential fields
+          profile_urn: account.profile_urn,
+          two_fa_auth_token: account.two_fa_auth_token,
+          cookie_path: account.cookie_path,
+          // Full proxy configuration
+          proxy: account.proxy || null,
           proxy_host: account.proxy?.host,
+          // Profile information
+          location: account.location,
+          account_year: account.account_year,
+          connection_count: account.connection_count,
+          recovery_email: account.recovery_email,
+          // Rate limiting stats
           daily_requests: account.daily_requests || 0,
           hourly_requests: account.hourly_requests || 0,
           daily_followers: account.daily_followers || 0,

@@ -649,47 +649,104 @@ export default function SalesNavAccountsPage() {
 
                   {/* Expanded details */}
                   {expandedAccount === account.account_index && (
-                    <div className="mt-4 p-4 bg-neutral-50 rounded-lg text-sm space-y-2">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-neutral-500">Proxy:</span>{' '}
-                          <span className="text-neutral-700">
-                            {account.proxy_host || 'Not configured'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-neutral-500">Cookie Path:</span>{' '}
-                          <span className="text-neutral-700 break-all">
-                            {account.cookie_path || 'Not set'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-neutral-500">Location:</span>{' '}
-                          <span className="text-neutral-700">{account.location || 'Not set'}</span>
-                        </div>
-                        <div>
-                          <span className="text-neutral-500">Account Year:</span>{' '}
-                          <span className="text-neutral-700">
-                            {account.account_year || 'Not set'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-neutral-500">Connections:</span>{' '}
-                          <span className="text-neutral-700">
-                            {account.connection_count || 0}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-neutral-500">Updated:</span>{' '}
-                          <span className="text-neutral-700">
-                            {account.updated_at
-                              ? new Date(account.updated_at).toLocaleString()
-                              : 'Never'}
-                          </span>
+                    <div className="mt-4 p-4 bg-neutral-50 rounded-lg text-sm space-y-4">
+                      {/* Credentials Section */}
+                      <div>
+                        <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Credentials</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-neutral-500">Profile URN:</span>{' '}
+                            <span className="text-neutral-700 font-mono text-xs break-all">
+                              {account.profile_urn || 'Not set'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-500">2FA Token:</span>{' '}
+                            <span className="text-neutral-700 font-mono text-xs">
+                              {account.two_fa_auth_token || 'Not set'}
+                            </span>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-neutral-500">Cookie Path:</span>{' '}
+                            <span className="text-neutral-700 font-mono text-xs break-all">
+                              {account.cookie_path || 'Not set'}
+                            </span>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Proxy Section */}
+                      <div>
+                        <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Proxy Configuration</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-neutral-500">Host:</span>{' '}
+                            <span className="text-neutral-700 font-mono text-xs">
+                              {account.proxy?.host || account.proxy_host || 'Not configured'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-500">Port:</span>{' '}
+                            <span className="text-neutral-700 font-mono text-xs">
+                              {account.proxy?.port || 'Not set'}
+                            </span>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-neutral-500">Username:</span>{' '}
+                            <span className="text-neutral-700 font-mono text-xs break-all">
+                              {account.proxy?.username || 'Not set'}
+                            </span>
+                          </div>
+                          {account.proxy?.password && (
+                            <div className="col-span-2">
+                              <span className="text-neutral-500">Password:</span>{' '}
+                              <span className="text-neutral-700 font-mono text-xs">
+                                ••••••••
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Profile Info Section */}
+                      <div>
+                        <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Profile Information</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-neutral-500">Location:</span>{' '}
+                            <span className="text-neutral-700">{account.location || 'Not set'}</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-500">Account Year:</span>{' '}
+                            <span className="text-neutral-700">
+                              {account.account_year || 'Not set'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-500">Connections:</span>{' '}
+                            <span className="text-neutral-700">
+                              {account.connection_count || 0}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-500">Recovery Email:</span>{' '}
+                            <span className="text-neutral-700">
+                              {account.recovery_email || 'Not set'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-500">Updated:</span>{' '}
+                            <span className="text-neutral-700">
+                              {account.updated_at
+                                ? new Date(account.updated_at).toLocaleString()
+                                : 'Never'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
                       {account.cooldown_reason && (
-                        <div className="mt-2 p-2 bg-amber-50 rounded border border-amber-200">
+                        <div className="p-2 bg-amber-50 rounded border border-amber-200">
                           <span className="text-amber-800">
                             Cooldown reason: {account.cooldown_reason}
                           </span>

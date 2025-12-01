@@ -4,14 +4,36 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { LogOut } from 'lucide-react';
+
+// Restricted nav items that only specific users can see
+const RESTRICTED_NAV_ITEMS: Record<string, string[]> = {
+  '/users': ['vinayak@enrich.so'],
+};
 
 export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  // Fetch user email on mount
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        const response = await axios.get('/api/auth/me');
+        if (response.data?.email) {
+          setUserEmail(response.data.email.toLowerCase());
+        }
+      } catch (error) {
+        // User not logged in or error fetching
+        console.error('Failed to fetch user info:', error);
+      }
+    };
+    fetchUserEmail();
+  }, []);
 
   // Don't show navigation on login page
   if (pathname === '/login') {
@@ -30,7 +52,7 @@ export function Navigation() {
     }
   };
 
-  const navItems = [
+  const allNavItems = [
     { href: '/teams', label: 'Teams' },
     { href: '/advanced-search', label: 'Advanced Search' },
     { href: '/credits', label: 'Credits' },
@@ -41,6 +63,15 @@ export function Navigation() {
     { href: '/sales-nav-accounts', label: 'Sales Nav' },
     { href: '/api-logs', label: 'API Logs' },
   ];
+
+  // Filter nav items based on user's email
+  const navItems = allNavItems.filter((item) => {
+    const allowedEmails = RESTRICTED_NAV_ITEMS[item.href];
+    if (allowedEmails) {
+      return userEmail && allowedEmails.includes(userEmail);
+    }
+    return true;
+  });
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white">
