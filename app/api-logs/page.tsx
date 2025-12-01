@@ -371,12 +371,12 @@ export default function ApiLogsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="max-w-[150px]">
-                        <p className="text-sm font-medium text-neutral-900 truncate" title={log.team_name}>
+                      <div className="min-w-[200px]">
+                        <p className="text-sm font-medium text-neutral-900" title={log.team_name}>
                           {log.team_name}
                         </p>
-                        <p className="text-xs text-neutral-400 truncate" title={log.team_uid}>
-                          {log.team_uid?.substring(0, 8)}...
+                        <p className="text-xs text-neutral-400 font-mono" title={log.team_uid}>
+                          {log.team_uid}
                         </p>
                       </div>
                     </td>

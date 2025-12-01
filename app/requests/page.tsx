@@ -20,6 +20,7 @@ interface CompanyFollowersRequest {
   _id: string;
   uid: string;
   team_uid: string;
+  team_name: string;
   endpoint: string;
   status: string;
   retry_status: string;
@@ -299,8 +300,8 @@ export default function RequestsPage() {
                   <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wide px-4 py-3">
                     Progress
                   </th>
-                  <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wide px-4 py-3">
-                    Team UID
+                  <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wide px-4 py-3 min-w-[200px]">
+                    Team
                   </th>
                   <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wide px-4 py-3">
                     Account
@@ -360,10 +361,15 @@ export default function RequestsPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-mono text-neutral-600 truncate block max-w-[150px]" title={req.team_uid}>
-                        {req.team_uid}
-                      </span>
+                    <td className="px-4 py-3 min-w-[200px]">
+                      <div>
+                        <span className="text-sm font-medium text-neutral-900 block truncate" title={req.team_name}>
+                          {req.team_name}
+                        </span>
+                        <span className="text-xs font-mono text-neutral-500 truncate block" title={req.team_uid}>
+                          {req.team_uid}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm text-neutral-600">

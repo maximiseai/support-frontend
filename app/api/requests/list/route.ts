@@ -28,13 +28,42 @@ export async function GET(request: NextRequest) {
     // Get total count
     const totalCount = await collection.countDocuments(filter);
 
-    // Get paginated results
+    // Get paginated results with team name lookup
     const skip = (page - 1) * limit;
     const requests = await collection
-      .find(filter)
-      .sort({ created_at: -1 })
-      .skip(skip)
-      .limit(limit)
+      .aggregate([
+        { $match: filter },
+        { $sort: { created_at: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        // Join with teams collection to get team name
+        {
+          $lookup: {
+            from: 'teams',
+            let: { teamUid: '$team_uid' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      { $eq: ['$uid', '$$teamUid'] },
+                      { $eq: [{ $toString: '$_id' }, '$$teamUid'] },
+                    ],
+                  },
+                },
+              },
+              { $project: { name: 1, uid: 1 } },
+            ],
+            as: 'teamInfo',
+          },
+        },
+        {
+          $addFields: {
+            team_name: { $arrayElemAt: ['$teamInfo.name', 0] },
+          },
+        },
+        { $project: { teamInfo: 0 } },
+      ])
       .toArray();
 
     // Map to response format
@@ -42,6 +71,7 @@ export async function GET(request: NextRequest) {
       _id: req._id.toString(),
       uid: req.uid,
       team_uid: req.team_uid,
+      team_name: req.team_name || 'Unknown Team',
       endpoint: req.endpoint,
       status: req.status,
       retry_status: req.retry_status,
