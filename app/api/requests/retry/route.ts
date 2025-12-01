@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Reset the request to pending status
+    // CRITICAL: Worker checks response.account_used, not top-level account_used
     const result = await collection.updateOne(
       { _id: objectId },
       {
@@ -53,15 +54,28 @@ export async function POST(request: NextRequest) {
           worker_heartbeat: null,
           started_at: null,
           account_used: null,
+          // Reset response object fields - worker checks these!
           'response.status': 'pending',
+          'response.account_used': null,
           'response.progress': 0,
           'response.scraped_count': 0,
+          'response.started_at': null,
+          'response.failed_at': null,
+          'response.completed_at': null,
+          'response.account_assigned_at': null,
+          'response.current_attempt': 0,
+          'response.error_message': null,
+          'response.error_details': null,
+          'response.worker_heartbeat': null,
           updated_at: new Date(),
         },
         $unset: {
           excluded_accounts: '',
           final_excluded_accounts: '',
           attempt_history: '',
+          'response.excluded_accounts': '',
+          'response.attempt_history': '',
+          'response.accounts_tried': '',
         },
       }
     );

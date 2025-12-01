@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       connection_count,
       recovery_email,
       active,
-      permanently_disabled,
+      // permanently_disabled - REMOVED: Never allow permanent banning of accounts
     } = body;
 
     // Validate account_index
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     if (connection_count !== undefined) updateFields.connection_count = parseInt(connection_count, 10) || 0;
     if (recovery_email !== undefined) updateFields.recovery_email = recovery_email.trim();
     if (typeof active === 'boolean') updateFields.active = active;
-    if (typeof permanently_disabled === 'boolean') updateFields.permanently_disabled = permanently_disabled;
+    // REMOVED: Never allow permanent banning - accounts can only be temporarily disabled via 'active' flag
 
     // Handle proxy update
     if (proxy !== undefined) {

@@ -14,7 +14,6 @@ import {
   Server,
   Clock,
   AlertTriangle,
-  Ban,
   Activity,
 } from 'lucide-react';
 
@@ -230,7 +229,7 @@ export default function SalesNavAccountsPage() {
   const [toggling, setToggling] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'disabled'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modal state
@@ -374,7 +373,6 @@ export default function SalesNavAccountsPage() {
   const filteredAccounts = accounts.filter((acc) => {
     if (filter === 'active' && !acc.active) return false;
     if (filter === 'inactive' && acc.active) return false;
-    if (filter === 'disabled' && !acc.permanently_disabled) return false;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -392,8 +390,7 @@ export default function SalesNavAccountsPage() {
   });
 
   const activeCount = accounts.filter((acc) => acc.active).length;
-  const inactiveCount = accounts.filter((acc) => !acc.active && !acc.permanently_disabled).length;
-  const disabledCount = accounts.filter((acc) => acc.permanently_disabled).length;
+  const inactiveCount = accounts.filter((acc) => !acc.active).length;
 
   const formatLinkedInUrl = (url: string) => {
     try {
@@ -439,12 +436,7 @@ export default function SalesNavAccountsPage() {
           <p className="text-xs text-neutral-500 mb-1">Inactive</p>
           <p className="text-2xl font-medium text-amber-700">{inactiveCount}</p>
         </div>
-        <div className="p-4 bg-white border border-neutral-200 rounded-lg">
-          <p className="text-xs text-neutral-500 mb-1 flex items-center gap-1">
-            Permanently Disabled <InfoTooltip field="permanently_disabled" />
-          </p>
-          <p className="text-2xl font-medium text-red-700">{disabledCount}</p>
-        </div>
+        {/* Permanently Disabled stats card REMOVED - accounts should never be permanently banned */}
       </div>
 
       {/* Search Bar */}
@@ -502,16 +494,7 @@ export default function SalesNavAccountsPage() {
           >
             Inactive ({inactiveCount})
           </button>
-          <button
-            onClick={() => setFilter('disabled')}
-            className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors ${
-              filter === 'disabled'
-                ? 'bg-red-600 text-white border-red-600'
-                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-            }`}
-          >
-            Permanently Disabled ({disabledCount})
-          </button>
+          {/* Permanently Disabled filter REMOVED - accounts should never be permanently banned */}
 
           {searchQuery && (
             <span className="text-sm text-neutral-500 ml-2">
@@ -574,12 +557,7 @@ export default function SalesNavAccountsPage() {
                       {account.active ? 'Active' : 'Inactive'}
                     </span>
 
-                    {account.permanently_disabled && (
-                      <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 flex items-center gap-1">
-                        <Ban className="h-3 w-3" />
-                        Permanently Disabled
-                      </span>
-                    )}
+                    {/* Permanently Disabled badge REMOVED - accounts should never be permanently banned */}
 
                     {account.in_cooldown && (
                       <span className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 flex items-center gap-1">
@@ -792,9 +770,9 @@ export default function SalesNavAccountsPage() {
 
                   <button
                     onClick={() => handleToggle(account.account_index, account.active)}
-                    disabled={toggling === account.account_index || account.permanently_disabled}
+                    disabled={toggling === account.account_index}
                     className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      toggling === account.account_index || account.permanently_disabled
+                      toggling === account.account_index
                         ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
                         : account.active
                         ? 'bg-red-600 text-white hover:bg-red-700'
@@ -986,12 +964,7 @@ export default function SalesNavAccountsPage() {
                       checked={formData.active}
                       onChange={(v) => updateField('active', v)}
                     />
-                    <CheckboxField
-                      label="Permanently Disabled"
-                      field="permanently_disabled"
-                      checked={formData.permanently_disabled}
-                      onChange={(v) => updateField('permanently_disabled', v)}
-                    />
+                    {/* Permanently Disabled toggle REMOVED - accounts should never be permanently banned */}
                   </div>
                 </div>
               )}
