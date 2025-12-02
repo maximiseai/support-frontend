@@ -14,6 +14,8 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  PlayCircle,
+  RotateCcw,
 } from 'lucide-react';
 
 interface CompanyFollowersRequest {
@@ -54,6 +56,7 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<CompanyFollowersRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [restartingAll, setRestartingAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pagination, setPagination] = useState<Pagination>({
@@ -107,6 +110,38 @@ export default function RequestsPage() {
       setError(err.response?.data?.error || 'Failed to retry request');
     } finally {
       setRetrying(null);
+    }
+  };
+
+  const handleRestartAllPending = async () => {
+    if (!confirm('Are you sure you want to restart all pending requests? This will reset them for processing.')) {
+      return;
+    }
+
+    setRestartingAll(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // Get all pending requests and restart each one
+      const pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'retry_pending');
+      let restartedCount = 0;
+
+      for (const req of pendingRequests) {
+        try {
+          await axios.post('/api/requests/retry', { requestId: req._id });
+          restartedCount++;
+        } catch (err) {
+          console.error(`Failed to restart request ${req._id}:`, err);
+        }
+      }
+
+      setSuccess(`Successfully restarted ${restartedCount} pending request(s)`);
+      loadRequests(pagination.page);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to restart requests');
+    } finally {
+      setRestartingAll(false);
     }
   };
 
@@ -181,14 +216,35 @@ export default function RequestsPage() {
         <h1 className="text-2xl font-medium text-neutral-900">
           Company Followers Requests
         </h1>
-        <button
-          onClick={() => loadRequests(pagination.page)}
-          disabled={loading}
-          className="px-4 py-2 text-sm font-medium bg-neutral-100 text-neutral-700 rounded-md hover:bg-neutral-200 transition-colors flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          {stats.pending > 0 && (
+            <button
+              onClick={handleRestartAllPending}
+              disabled={restartingAll || loading}
+              className="px-4 py-2 text-sm font-medium bg-amber-100 text-amber-700 rounded-md hover:bg-amber-200 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              {restartingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Restarting...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4" />
+                  Restart All Pending ({stats.pending})
+                </>
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => loadRequests(pagination.page)}
+            disabled={loading}
+            className="px-4 py-2 text-sm font-medium bg-neutral-100 text-neutral-700 rounded-md hover:bg-neutral-200 transition-colors flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -387,21 +443,34 @@ export default function RequestsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {(req.status === 'failed' || req.retry_status === 'exhausted') && (
+                      {(req.status === 'failed' || req.status === 'pending' || req.status === 'retry_pending' || req.retry_status === 'exhausted') && (
                         <button
                           onClick={() => handleRetry(req._id)}
                           disabled={retrying === req._id}
-                          className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          className={`px-3 py-1.5 text-xs font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${
+                            req.status === 'pending' || req.status === 'retry_pending'
+                              ? 'bg-amber-600 text-white hover:bg-amber-700'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
                         >
                           {retrying === req._id ? (
                             <>
                               <Loader2 className="h-3 w-3 animate-spin" />
-                              Retrying...
+                              Restarting...
                             </>
                           ) : (
                             <>
-                              <RefreshCw className="h-3 w-3" />
-                              Retry
+                              {req.status === 'pending' || req.status === 'retry_pending' ? (
+                                <>
+                                  <PlayCircle className="h-3 w-3" />
+                                  Restart
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="h-3 w-3" />
+                                  Retry
+                                </>
+                              )}
                             </>
                           )}
                         </button>
