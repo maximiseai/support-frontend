@@ -443,38 +443,31 @@ export default function RequestsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {(req.status === 'failed' || req.status === 'pending' || req.status === 'retry_pending' || req.retry_status === 'exhausted') && (
-                        <button
-                          onClick={() => handleRetry(req._id)}
-                          disabled={retrying === req._id}
-                          className={`px-3 py-1.5 text-xs font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${
-                            req.status === 'pending' || req.status === 'retry_pending'
-                              ? 'bg-amber-600 text-white hover:bg-amber-700'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
-                          }`}
-                        >
-                          {retrying === req._id ? (
-                            <>
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Restarting...
-                            </>
-                          ) : (
-                            <>
-                              {req.status === 'pending' || req.status === 'retry_pending' ? (
-                                <>
-                                  <PlayCircle className="h-3 w-3" />
-                                  Restart
-                                </>
-                              ) : (
-                                <>
-                                  <RefreshCw className="h-3 w-3" />
-                                  Retry
-                                </>
-                              )}
-                            </>
-                          )}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleRetry(req._id)}
+                        disabled={retrying === req._id}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 ${
+                          req.status === 'pending' || req.status === 'retry_pending'
+                            ? 'bg-amber-600 text-white hover:bg-amber-700'
+                            : req.status === 'completed'
+                            ? 'bg-green-600 text-white hover:bg-green-700'
+                            : req.status === 'in_progress'
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-red-600 text-white hover:bg-red-700'
+                        }`}
+                      >
+                        {retrying === req._id ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Restarting...
+                          </>
+                        ) : (
+                          <>
+                            <RotateCcw className="h-3 w-3" />
+                            Retry
+                          </>
+                        )}
+                      </button>
                     </td>
                   </tr>
                 ))}
