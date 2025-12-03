@@ -39,6 +39,17 @@ export async function GET(request: NextRequest) {
     const apisWithAccess = allApis.map(api => {
       const teamApi = teamApis.find(ta => ta.api.toString() === api._id.toString());
       const isEnabled = enabledApiIds.has(api._id.toString()) && teamApi?.enabled !== false;
+
+      // Global API settings (from apis collection) - these are defaults for new teams only
+      const globalActive = api.active !== false; // defaults to true
+      const globalDashboardEnabled = api.dashboardEnabled !== false; // defaults to true
+
+      // Team-specific settings - these override global settings
+      const teamDashboardEnabled = isEnabled ? (teamApi?.dashboardEnabled !== false) : false;
+
+      // Will show on client dashboard - ONLY team settings matter (team overrides global)
+      const willShowOnDashboard = isEnabled && teamDashboardEnabled;
+
       return {
         ...api,
         enabled: isEnabled,
@@ -46,8 +57,13 @@ export async function GET(request: NextRequest) {
         endpoint: teamApi?.endpoint || api.endpoint,
         rateLimit: teamApi?.rateLimit || api.rateLimit || 100,
         creditsPerCall: teamApi?.creditsPerCall ?? api.creditsPerCall ?? 1,
-        // dashboardEnabled defaults to true for enabled APIs if not explicitly set
-        dashboardEnabled: isEnabled ? (teamApi?.dashboardEnabled !== false) : false,
+        // Team-level dashboard visibility
+        dashboardEnabled: teamDashboardEnabled,
+        // Global API settings (for reference only - used as defaults for new teams)
+        globalActive,
+        globalDashboardEnabled,
+        // Computed: will this actually show on client dashboard?
+        willShowOnDashboard,
       };
     });
 

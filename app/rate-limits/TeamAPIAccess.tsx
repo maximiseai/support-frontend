@@ -13,6 +13,11 @@ interface API {
   creditsPerCall?: number;
   hasBulk?: boolean;
   dashboardEnabled?: boolean;
+  // Global API settings (from apis collection)
+  globalActive?: boolean;
+  globalDashboardEnabled?: boolean;
+  // Computed: will this actually show on client dashboard?
+  willShowOnDashboard?: boolean;
 }
 
 interface Team {
@@ -226,7 +231,7 @@ export default function TeamAPIAccess({ team }: TeamAPIAccessProps) {
 
   const enabledCount = filteredApis.filter(api => api.enabled).length;
   const disabledCount = filteredApis.filter(api => !api.enabled).length;
-  const dashboardVisibleCount = filteredApis.filter(api => api.enabled && api.dashboardEnabled).length;
+  const dashboardVisibleCount = filteredApis.filter(api => api.willShowOnDashboard).length;
 
   const availableApisToGrant = apis.filter(api => !api.enabled);
 
@@ -320,7 +325,7 @@ export default function TeamAPIAccess({ team }: TeamAPIAccessProps) {
             borderRadius: '4px',
           }}
         >
-          <p className="text-xs" style={{ color: '#166534' }}>Enabled</p>
+          <p className="text-xs" style={{ color: '#166534' }}>Team Enabled</p>
           <p className="text-xl font-medium mt-1" style={{ color: '#166534' }}>{enabledCount}</p>
         </div>
         <div
@@ -342,7 +347,7 @@ export default function TeamAPIAccess({ team }: TeamAPIAccessProps) {
             borderRadius: '4px',
           }}
         >
-          <p className="text-xs" style={{ color: '#991b1b' }}>Disabled</p>
+          <p className="text-xs" style={{ color: '#991b1b' }}>Team Disabled</p>
           <p className="text-xl font-medium mt-1" style={{ color: '#991b1b' }}>{disabledCount}</p>
         </div>
       </div>
@@ -390,11 +395,12 @@ export default function TeamAPIAccess({ team }: TeamAPIAccessProps) {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <p className="text-sm font-medium" style={{ color: '#3e3832' }}>
                         {api.name}
                       </p>
-                      {api.enabled && (
+                      {/* Final status - will it show on dashboard? */}
+                      {api.willShowOnDashboard ? (
                         <span
                           className="px-2 py-0.5 text-xs font-medium rounded"
                           style={{
@@ -402,18 +408,17 @@ export default function TeamAPIAccess({ team }: TeamAPIAccessProps) {
                             color: '#166534',
                           }}
                         >
-                          Enabled
+                          ✓ Will Show
                         </span>
-                      )}
-                      {api.dashboardEnabled && (
+                      ) : (
                         <span
                           className="px-2 py-0.5 text-xs font-medium rounded"
                           style={{
-                            backgroundColor: '#dbeafe',
-                            color: '#1e40af',
+                            backgroundColor: '#fee2e2',
+                            color: '#991b1b',
                           }}
                         >
-                          Dashboard Visible
+                          ✗ Won't Show
                         </span>
                       )}
                       {api.hasBulk && (
@@ -431,6 +436,40 @@ export default function TeamAPIAccess({ team }: TeamAPIAccessProps) {
                     <code className="text-xs" style={{ color: '#a8998a' }}>
                       {api.endpoint}
                     </code>
+                    {/* Team settings control visibility */}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {/* Team settings - these control visibility */}
+                      <span
+                        className="px-2 py-0.5 text-xs font-medium rounded"
+                        style={{
+                          backgroundColor: api.enabled ? '#dcfce7' : '#fee2e2',
+                          color: api.enabled ? '#166534' : '#991b1b',
+                        }}
+                      >
+                        Team Access: {api.enabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                      <span
+                        className="px-2 py-0.5 text-xs font-medium rounded"
+                        style={{
+                          backgroundColor: api.dashboardEnabled ? '#dbeafe' : '#fee2e2',
+                          color: api.dashboardEnabled ? '#1e40af' : '#991b1b',
+                        }}
+                      >
+                        Dashboard: {api.dashboardEnabled ? 'Visible' : 'Hidden'}
+                      </span>
+                      {/* Global settings - shown as reference only */}
+                      <span
+                        className="px-2 py-0.5 text-xs rounded opacity-60"
+                        style={{
+                          backgroundColor: '#f5f5f5',
+                          color: '#737373',
+                          border: '1px solid #e5e5e5',
+                        }}
+                        title="Global settings are defaults for new teams only"
+                      >
+                        Default: {api.globalActive && api.globalDashboardEnabled ? 'On' : 'Off'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
