@@ -32,12 +32,13 @@ export async function GET(request: NextRequest) {
       .sort({ name: 1 })
       .toArray();
 
-    // Create a map of enabled APIs
-    const enabledApiIds = new Set(teamApis.map(ta => ta.api.toString()));
+    // Create a map of enabled APIs (filter out records with missing api field)
+    const validTeamApis = teamApis.filter(ta => ta.api);
+    const enabledApiIds = new Set(validTeamApis.map(ta => ta.api.toString()));
 
     // Combine data
     const apisWithAccess = allApis.map(api => {
-      const teamApi = teamApis.find(ta => ta.api.toString() === api._id.toString());
+      const teamApi = validTeamApis.find(ta => ta.api.toString() === api._id.toString());
       const isEnabled = enabledApiIds.has(api._id.toString()) && teamApi?.enabled !== false;
 
       // Global API settings (from apis collection) - these are defaults for new teams only
