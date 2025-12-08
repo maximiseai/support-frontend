@@ -98,8 +98,8 @@ export default function APIsPage() {
           ? {
               ...api,
               is_available: !currentAvailability,
-              unavailable_reason: currentAvailability ? reason : null,
-              unavailable_since: currentAvailability ? new Date().toISOString() : null,
+              unavailable_reason: currentAvailability ? reason : undefined,
+              unavailable_since: currentAvailability ? new Date().toISOString() : undefined,
             }
           : api
       ));
